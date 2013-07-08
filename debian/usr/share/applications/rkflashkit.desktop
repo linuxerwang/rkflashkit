@@ -1,0 +1,13 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=rkflashkit
+Comment=rkflashkit
+Exec=/usr/bin/rkflashkit-pkexec
+Terminal=false
+Type=Application
+Icon=/usr/share/rkflashkit/images/rkflashkit.png
+StartupNotify=true
+Categories=GNOME;Application;System;
+X-GNOME-Bugzilla-Bugzilla=GNOME
+X-GNOME-Bugzilla-Product=rkflashkit
+X-GNOME-Bugzilla-Component=general
