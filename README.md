@@ -7,17 +7,23 @@ rkflashkit talks to the devices through vpelletier's python-libusb1 which is a p
 
 
 Features
---------
+==========
 * Programmed with python, GTK2 and libusb1.
 * Automatically detect device connection.
-* Flash kernel image file to specified partition. 
+* Flash kernel image file to specified partition.
 * Erase partition.
 * Backup partition (TODO).
 * Reboot device.
 
 
+Build
+=====
+
+$ ./waf debian
+
+
 Installation
-------------
+============
 
 Before installing the deb file please install its dependency:
 
@@ -31,7 +37,7 @@ You should be able to find an icon in unity dasher or gnome menu.
 
 
 Links
------
+=====
     https://github.com/Galland/rkflashtool_rk3066
     https://github.com/cyteen/rk3066-rkflashtool
     https://github.com/vpelletier/python-libusb1
