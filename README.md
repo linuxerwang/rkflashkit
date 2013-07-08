@@ -23,6 +23,12 @@ Before installing the deb file please install its dependency:
 
 $ sudo apt-get install python-gtk2
 
+then
+
+$ sudo dpkg -i rkflashkit_0.1.0_all.deb
+
+You should be able to find an icon in unity dasher or gnome menu.
+
 
 Links
 -----
