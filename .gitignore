@@ -1,0 +1,5 @@
+.lock-waf*
+.waf*
+*.deb
+build
+debian/usr/share/rkflashkit/lib
