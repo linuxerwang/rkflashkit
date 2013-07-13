@@ -9,6 +9,7 @@ pygtk.require('2.0')
 import glib
 import gtk
 import os
+import pango
 import rktalk
 
 
@@ -69,10 +70,16 @@ class Logger(object):
     self.__end_mark = self.__text_buffer.create_mark(
         None, self.__text_buffer.get_end_iter(), True)
     self.__first_dividor = True
+    self.__dividor_tag = self.__text_buffer.create_tag(
+        'dividor', weight=pango.WEIGHT_BOLD, foreground="#FF0000")
 
 
-  def log(self, message):
-    self.__text_buffer.insert(self.__text_buffer.get_end_iter(), message)
+  def log(self, message, tag=None):
+    if tag:
+      self.__text_buffer.insert_with_tags(
+          self.__text_buffer.get_end_iter(), message, tag)
+    else:
+      self.__text_buffer.insert(self.__text_buffer.get_end_iter(), message)
 
     # Scroll to the end of the text view
     self.__text_buffer.move_mark(
@@ -85,7 +92,8 @@ class Logger(object):
 
   def print_dividor(self):
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    self.log('\n============= %s ============\n\n' % current_time)
+    self.log('\n============= %s ============\n\n' % current_time,
+             self.__dividor_tag)
 
 
 class MainWindow(gtk.Window):
@@ -270,7 +278,6 @@ class MainWindow(gtk.Window):
 
   def __check_devices(self):
     device_uids, device_list = rktalk.list_devices()
-    print device_uids, self.__device_uids
     if device_uids != self.__device_uids:
       self.__device_uids = device_uids
       self.__device_liststore.clear()
