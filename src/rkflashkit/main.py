@@ -17,6 +17,8 @@ DEFAULT_WINDOW_WIDTH  = 1000
 DEFAULT_WINDOW_HEIGHT = 650
 MESSAGE_FLASH = (
     'Are you sure to flash image file %s to partition "%s"?')
+MESSAGE_COMPARE = (
+    'Are you sure to compare partition "%s" with image file %s?')
 MESSAGE_ERASE = 'Are you sure to erase partition 0x%08X@0x%08X?'
 MESSAGE_REBOOT = 'Are you sure to reboot the device?'
 
@@ -72,6 +74,10 @@ class Logger(object):
     self.__first_dividor = True
     self.__dividor_tag = self.__text_buffer.create_tag(
         'dividor', weight=pango.WEIGHT_BOLD, foreground="#FF0000")
+    self.__done_tag = self.__text_buffer.create_tag(
+        'done', weight=pango.WEIGHT_BOLD, foreground="#00FF00")
+    self.__error_tag = self.__text_buffer.create_tag(
+        'error', weight=pango.WEIGHT_BOLD, foreground="#FF0000")
 
 
   def log(self, message, tag=None):
@@ -94,6 +100,14 @@ class Logger(object):
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     self.log('\n============= %s ============\n\n' % current_time,
              self.__dividor_tag)
+
+
+  def print_done(self):
+    self.log('\tDone!\n', self.__done_tag)
+
+
+  def print_error(self, message):
+    self.log(message, self.__error_tag)
 
 
 class MainWindow(gtk.Window):
@@ -181,6 +195,10 @@ class MainWindow(gtk.Window):
     self.__flash_button.connect('clicked', self.__flash_image_file)
     frame.pack_start(self.__flash_button, expand=False, fill=False)
 
+    self.__cmp_button = gtk.Button('Compare partition with image file')
+    self.__cmp_button.connect('clicked', self.__cmp_part_with_file)
+    frame.pack_start(self.__cmp_button, expand=False, fill=False)
+
     self.__erase_button = gtk.Button('Erase Partition')
     self.__erase_button.connect('clicked', self.__erase_partition)
     frame.pack_start(self.__erase_button, expand=False, fill=False)
@@ -244,6 +262,22 @@ class MainWindow(gtk.Window):
       try:
         op = rktalk.RkOperation(self.__logger, device_info[0], device_info[1])
         op.flash_image_file(offset, size, image_file)
+      finally:
+        if op: del op
+
+
+  def __cmp_part_with_file(self, widget):
+    image_file = self.__image_entry.get_text().strip()
+    device_info, = self.__device_liststore.get(
+        self.__device_selector.get_active_iter(), 1)
+    offset, size, part_name = self.__partition_liststore.get(
+        self.__partition_selector.get_active_iter(), 1, 2, 0)
+    message = MESSAGE_COMPARE % (part_name, os.path.basename(image_file))
+    if confirm(self, message):
+      op = None
+      try:
+        op = rktalk.RkOperation(self.__logger, device_info[0], device_info[1])
+        op.cmp_part_with_file(offset, size, image_file)
       finally:
         if op: del op
 
@@ -318,6 +352,8 @@ class MainWindow(gtk.Window):
     image_file = self.__image_entry.get_text().strip()
     image_ready = len(image_file) > 10 and os.path.exists(image_file)
     self.__flash_button.set_sensitive(
+        device_ready and partition_ready and image_ready)
+    self.__cmp_button.set_sensitive(
         device_ready and partition_ready and image_ready)
     self.__erase_button.set_sensitive(device_ready and partition_ready)
     self.__reboot_button.set_sensitive(device_ready)

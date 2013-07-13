@@ -109,16 +109,47 @@ class RkOperation(object):
 
   def __init_device(self):
     if self.__dev_handle.kernelDriverActive(0):
-      print self.__dev_handle.detachKernelDriver(0)
+      self.__dev_handle.detachKernelDriver(0)
     self.__dev_handle.claimInterface(0)
 
     # Init
-    print self.__dev_handle.bulkWrite(
+    self.__dev_handle.bulkWrite(
         2, ''.join(prepare_cmd(0x80, 0x00060000, 0x00000000, 0x00000000)))
     self.__dev_handle.bulkRead(1, 13)
 
     # sleep for 20ms
     time.sleep(0.02)
+
+
+  def __cmp_part_with_file(self, offset, size, file_name):
+    self.__logger.log('\tComparing partition 0x%08X@0x%08X with file %s\n' % (
+        offset, size, file_name))
+    with open(file_name) as fh:
+      while size > 0:
+        if offset % RKFT_DISPLAY == 0:
+          self.__logger.log(
+              '\treading flash memory at offset 0x%08x\n' % offset)
+
+        block1 = fh.read(RKFT_BLOCKSIZE)
+        self.__dev_handle.bulkWrite(
+            2, ''.join(prepare_cmd(0x80, 0x000a1400, offset, RKFT_OFF_INCR)))
+        block2 = self.__dev_handle.bulkRead(1, RKFT_BLOCKSIZE)
+        self.__dev_handle.bulkRead(1, 13)
+
+        if len(block1) == len(block2):
+          if block1 != block2:
+            self.__logger.print_error(
+                '\tFlash memory at 0x%08x is differnt from file!\n' % offset)
+        else:
+          block2 = block2[:len(block1)]
+          if block1 != block2:
+            self.__logger.print_error(
+                '\tFlash memory at 0x%08x is differnt from file!\n' % offset)
+
+        offset += RKFT_OFF_INCR
+        size   -= RKFT_OFF_INCR
+
+    self.__logger.print_done()
 
 
   def load_partitions(self):
@@ -139,15 +170,17 @@ class RkOperation(object):
         # return a list of tuple (size, unused, offset, part_name)
         return re.findall(PARTITION_PATTERN, line)
 
-    self.__logger.log('\tDone!\n')
+    self.__logger.print_done()
     return partitions
 
 
   def flash_image_file(self, offset, size, file_name):
     self.__init_device()
 
+    original_offset, original_size = offset, size
+
     self.__logger.print_dividor()
-    self.__logger.log('\tWriting file %s to part 0x%08X@0x%08X\n' % (
+    self.__logger.log('\tWriting file %s to partition 0x%08X@0x%08X\n' % (
         file_name, offset, size))
     with open(file_name) as fh:
       while size > 0:
@@ -166,7 +199,17 @@ class RkOperation(object):
         offset += RKFT_OFF_INCR
         size   -= RKFT_OFF_INCR
 
-    self.__logger.log('\tDone!\n')
+    self.__logger.print_done()
+
+    # Validate partition.
+    self.__logger.log('\n')
+    self.__cmp_part_with_file(original_offset, original_size, file_name)
+
+
+  def cmp_part_with_file(self, offset, size, file_name):
+    self.__init_device()
+    self.__logger.print_dividor()
+    self.__cmp_part_with_file(offset, size, file_name)
 
 
   def erase_partition(self, offset, size):
@@ -188,7 +231,7 @@ class RkOperation(object):
       offset += RKFT_OFF_INCR
       size   -= RKFT_OFF_INCR
 
-    self.__logger.log('\tDone!\n')
+    self.__logger.print_done()
 
 
   def reboot(self):
@@ -198,5 +241,5 @@ class RkOperation(object):
     self.__dev_handle.bulkRead(1, 13)
     self.__logger.print_dividor()
     self.__logger.log('\tRebooting device\n')
-    self.__logger.log('\tDone!\n')
+    self.__logger.print_done()
 
