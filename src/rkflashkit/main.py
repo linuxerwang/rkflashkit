@@ -66,9 +66,10 @@ class BoxFrame(gtk.Frame):
 
 
 class Logger(object):
-  def __init__(self, text_view):
+  def __init__(self, text_view, scroll_window):
     self.__text_view = text_view
     self.__text_buffer = text_view.get_buffer()
+    self.__vadjustment = scroll_window.get_vadjustment()
     self.__end_mark = self.__text_buffer.create_mark(
         None, self.__text_buffer.get_end_iter(), True)
     self.__first_dividor = True
@@ -87,10 +88,15 @@ class Logger(object):
     else:
       self.__text_buffer.insert(self.__text_buffer.get_end_iter(), message)
 
-    # Scroll to the end of the text view
-    self.__text_buffer.move_mark(
-        self.__end_mark, self.__text_buffer.get_end_iter())
-    self.__text_view.scroll_to_mark(self.__end_mark, 0.0)
+    size1 = self.__vadjustment.get_upper() - self.__vadjustment.get_lower()
+    size2 = self.__vadjustment.get_value() + self.__vadjustment.get_page_size()
+    print size1, size2
+    if (size1 - size2) * (size1 - size2) < 3.0 * 3.0:
+      # Sticky scrollbar: once the scroll bar was at the end of the text view,
+      # keep it at the end when appending log messages.
+      self.__text_buffer.move_mark(
+          self.__end_mark, self.__text_buffer.get_end_iter())
+      self.__text_view.scroll_to_mark(self.__end_mark, 0.0)
 
     # Make the UI responsive
     while gtk.events_pending(): gtk.main_iteration()
@@ -221,8 +227,9 @@ class MainWindow(gtk.Window):
     self.__log_text_view = gtk.TextView()
     self.__log_text_view.set_editable(False)
     self.__log_text_view.set_wrap_mode(gtk.WRAP_CHAR)
-    self.__logger = Logger(self.__log_text_view)
-    box.pack_start(wrap_with_scorlled_window(self.__log_text_view))
+    scroll_window = wrap_with_scorlled_window(self.__log_text_view)
+    self.__logger = Logger(self.__log_text_view, scroll_window)
+    box.pack_start(scroll_window)
 
 
   def __on_delete_window(self, window, event):
