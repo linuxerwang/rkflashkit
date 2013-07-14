@@ -212,6 +212,39 @@ class RkOperation(object):
     self.__cmp_part_with_file(offset, size, file_name)
 
 
+  def backup_partition(self, offset, size, file_name):
+    self.__init_device()
+
+    original_offset, original_size = offset, size
+
+    self.__logger.print_dividor()
+    self.__logger.log('\tBackup partition 0x%08X@0x%08X to file %s\n' % (
+        offset, size, file_name))
+    with open(file_name, 'w') as fh:
+      while size > 0:
+        if offset % RKFT_DISPLAY == 0:
+          self.__logger.log(
+              '\treading flash memory at offset 0x%08x\n' % offset)
+
+        self.__dev_handle.bulkWrite(
+            2, ''.join(prepare_cmd(0x80, 0x000a1400, offset, RKFT_OFF_INCR)))
+        block = self.__dev_handle.bulkRead(1, RKFT_BLOCKSIZE)
+        self.__dev_handle.bulkRead(1, 13)
+        if size < RKFT_BLOCKSIZE and len(block) < size:
+          block = block[:size]
+        if block:
+          fh.write(block)
+
+        offset += RKFT_OFF_INCR
+        size   -= RKFT_OFF_INCR
+
+    self.__logger.print_done()
+
+    # Verify backup.
+    self.__logger.log('\n')
+    self.__cmp_part_with_file(original_offset, original_size, file_name)
+
+
   def erase_partition(self, offset, size):
     self.__init_device()
 

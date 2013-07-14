@@ -115,6 +115,7 @@ class MainWindow(gtk.Window):
     gtk.Window.__init__(self)
 
     self.__device_uids = set([])
+    self.__last_backup_dir = None
 
     self.set_title('RkFlashKit')
     self.set_icon(self.render_icon('rkflashkit', gtk.ICON_SIZE_MENU))
@@ -199,6 +200,10 @@ class MainWindow(gtk.Window):
     self.__cmp_button.connect('clicked', self.__cmp_part_with_file)
     frame.pack_start(self.__cmp_button, expand=False, fill=False)
 
+    self.__backup_button = gtk.Button('Backup Partition')
+    self.__backup_button.connect('clicked', self.__backup_partition)
+    frame.pack_start(self.__backup_button, expand=False, fill=False)
+
     self.__erase_button = gtk.Button('Erase Partition')
     self.__erase_button.connect('clicked', self.__erase_partition)
     frame.pack_start(self.__erase_button, expand=False, fill=False)
@@ -282,6 +287,49 @@ class MainWindow(gtk.Window):
         if op: del op
 
 
+  def __choose_backup_file(self):
+    file_chooser = gtk.FileChooserDialog(
+        'Create a Backup File',
+        self,
+        gtk.FILE_CHOOSER_ACTION_SAVE, (
+            gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+            gtk.STOCK_OK, gtk.RESPONSE_OK)
+    )
+    if self.__last_backup_dir:
+      file_chooser.set_current_folder(self.__last_backup_dir)
+
+    try:
+      response = file_chooser.run()
+      if response == gtk.RESPONSE_OK:
+        self.__last_backup_dir = os.path.dirname(file_chooser.get_filename())
+        return file_chooser.get_filename()
+    finally:
+      file_chooser.destroy()
+
+    return None
+
+
+  def __backup_partition(self, widget):
+    backup_file = self.__choose_backup_file()
+    if backup_file:
+      backup_file += '.backup'
+      if os.path.exists(backup_file):
+        if not confirm(self, 'Back file already exists, overwrite?'):
+          return
+
+      device_info, = self.__device_liststore.get(
+          self.__device_selector.get_active_iter(), 1)
+      offset, size = self.__partition_liststore.get(
+          self.__partition_selector.get_active_iter(), 1, 2)
+
+      op = None
+      try:
+        op = rktalk.RkOperation(self.__logger, device_info[0], device_info[1])
+        op.backup_partition(offset, size, backup_file)
+      finally:
+        if op: del op
+
+
   def __erase_partition(self, widget):
     device_info, = self.__device_liststore.get(
         self.__device_selector.get_active_iter(), 1)
@@ -355,6 +403,7 @@ class MainWindow(gtk.Window):
         device_ready and partition_ready and image_ready)
     self.__cmp_button.set_sensitive(
         device_ready and partition_ready and image_ready)
+    self.__backup_button.set_sensitive(device_ready and partition_ready)
     self.__erase_button.set_sensitive(device_ready and partition_ready)
     self.__reboot_button.set_sensitive(device_ready)
 
