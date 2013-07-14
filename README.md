@@ -7,13 +7,29 @@ rkflashkit talks to the devices through vpelletier's python-libusb1 which is a p
 
 
 Features
-==========
+========
 * Programmed with python, GTK2 and libusb1.
 * Automatically detect device connection.
+* Reboot device.
 * Flash kernel image file to specified partition.
 * Erase partition.
-* Backup partition (TODO).
-* Reboot device.
+* Backup partition. (New)
+* Compare a partition with a image file. (New)
+
+
+Change logs:
+============
+
+Release 0.1.1:
+* Sticky scrollbar in log view: when appending logs keep scrollbar at the bottom if it's already there.
+* Partition backup function.
+* Validation for flashing image file to partition.
+* Compare a partition with any image file.
+* Colored log messages.
+
+
+Release 0.1.0:
+* Initial import.
 
 
 Build
@@ -31,7 +47,7 @@ $ sudo apt-get install python-gtk2
 
 then
 
-$ sudo dpkg -i rkflashkit_0.1.0_all.deb
+$ sudo dpkg -i rkflashkit_0.1.1_all.deb
 
 You should be able to find an icon in unity dasher or gnome menu.
 

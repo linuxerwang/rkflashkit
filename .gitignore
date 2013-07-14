@@ -1,5 +1,6 @@
 .lock-waf*
 .waf*
 *.deb
+*.pyc
 build
 debian/usr/share/rkflashkit/lib
