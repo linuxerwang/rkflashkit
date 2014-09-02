@@ -6,26 +6,44 @@ import time
 import os
 import rktalk
 
-class ConsoleLogger(object):
-  def __init__(self):
-    pass
+BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 
-  def log(self, message, tag=None):
-    if tag:
-      print "[%s] %s" % (tag, message)
+def format(fg=None, bg=None, bright=False, bold=False, dim=False, reset=False):
+    # manually derived from http://en.wikipedia.org/wiki/ANSI_escape_code#Codes
+    codes = []
+    if reset: codes.append("0")
     else:
+        if not fg is None: codes.append("3%d" % (fg))
+        if not bg is None:
+            if not bright: codes.append("4%d" % (bg))
+            else: codes.append("10%d" % (bg))
+        if bold: codes.append("1")
+        elif dim: codes.append("2")
+        else: codes.append("22")
+    return "\033[%sm" % (";".join(codes))
+
+class ConsoleLogger(object):
+  def __init__(self, use_color=False):
+    self.WARN_COLOR = self.SUCC_COLOR = self.RESET_COLOR = ""
+    if use_color:
+        self.WARN_COLOR = format(fg=RED)
+        self.SUCC_COLOR = format(fg=GREEN)
+        self.RESET_COLOR = format(reset=True)
+
+  def log(self, message):
       print message
 
   def print_dividor(self):
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    self.log('\n============= %s ============\n\n' % current_time)
+    self.log('\n%s============= %s ============%s\n\n' % (
+      self.WARN_COLOR, current_time, self.RESET_COLOR))
 
   def print_done(self):
-    self.log('\tDone!\n')
+    self.log('\t%sDone!%s\n' % (self.SUCC_COLOR, self.RESET_COLOR))
 
 
   def print_error(self, message):
-    self.log(message, "ERROR")
+    self.log('%sERROR:%s %s' % (self.WARN_COLOR, self.RESET_COLOR, message))
 
 def get_devices():
   device_store = []
@@ -63,12 +81,15 @@ class Operation(object):
 
 class CliMain(object):
   def __init__(self):
-    self.logger = ConsoleLogger()
+    self.logger = ConsoleLogger(use_color=True)
     self.bus_id = 0
     self.dev_id = 0
     self.partition = {}
 
   def main(self, args):
+    if args[0] in ("help", "-h", "--help"):
+      self.usage()
+      return 0
     dev = wait_for_one_device()
     self.bus_id = dev[1][0]
     self.dev_id = dev[1][1]
