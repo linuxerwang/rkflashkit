@@ -127,8 +127,22 @@ class CliMain(object):
         self.reboot()
         break
       else:
+        self.usage()
         raise RuntimeError("Unknown command: %s", args[0])
 
+  def usage(self):
+    print """Usage: <cmd> [args] [<cmd> [args]...]
+
+part                              List partition
+flash @<PARTITION> <IMAGE FILE>   Flash partition with image file
+cmp @<PARTITION> <IMAGE FILE>     Compare partition with image file
+backup @<PARTITION> <IMAGE FILE>  Backup partition to image file
+erase  @<PARTITION>               Erase partition
+reboot                            Reboot device
+
+For example, flash device with boot.img and kernel.img, then reboot:
+
+  sudo rkflashkit flash @boot boot.img @kernel.img kernel.img reboot"""
   def get_operation(self):
     assert self.bus_id and self.dev_id
     return Operation(self.logger, self.bus_id, self.dev_id)
