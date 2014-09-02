@@ -59,4 +59,26 @@ Links
     https://github.com/vpelletier/python-libusb1
 
 
+Command line usage
+==================
 
+* List NAND Partitions
+$ rkflashkit part
+
+* Flash image
+$ rkflashkit flash @boot boot.img @resource resourse.img
+
+* Compare partition with image file
+$ rkflashkit cmp @boot boot.img
+
+* Backup partition
+$ rkflashkit backup @boot new_boot.img
+
+* Erase Partition
+$ rkflashkit erase @boot
+
+* Reboot Device
+$ rkflashkit reboot
+
+Multiple commands can be specified at once.
+$ rkflashkit flash @boot boot.img @resource resourse.img reboot
