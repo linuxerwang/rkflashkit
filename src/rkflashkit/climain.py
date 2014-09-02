@@ -59,7 +59,7 @@ def wait_for_one_device():
     devices = get_devices()
     if not devices:
       print "No devices found, retry..."
-      time.sleep(2)
+      time.sleep(1)
     else:
       print "Found devices:"
       for dev in devices:
