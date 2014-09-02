@@ -142,6 +142,8 @@ class RkOperation(object):
             self.__logger.print_error(
                 '\tFlash memory at 0x%08x is differnt from file!\n' % offset)
         else:
+          if len(block1) == 0:
+            break
           block2 = block2[:len(block1)]
           if block1 != block2:
             self.__logger.print_error(
@@ -185,13 +187,16 @@ class RkOperation(object):
         file_name, offset, size))
     with open(file_name) as fh:
       while size > 0:
+        block = fh.read(RKFT_BLOCKSIZE)
+        if not block:
+          break
+        buf = bytearray(RKFT_BLOCKSIZE)
+        buf[:len(block)] = block
+
         if offset % RKFT_DISPLAY == 0:
           self.__logger.log(
               '\twriting flash memory at offset 0x%08x\n' % offset)
 
-        buf = bytearray(RKFT_BLOCKSIZE)
-        block = fh.read(RKFT_BLOCKSIZE)
-        buf[:len(block)] = block
         self.__dev_handle.bulkWrite(
             2, ''.join(prepare_cmd(0x80, 0x000a1500, offset, RKFT_OFF_INCR)))
         self.__dev_handle.bulkWrite(2, str(buf))
