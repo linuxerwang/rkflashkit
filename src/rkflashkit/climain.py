@@ -165,9 +165,12 @@ For example, flash device with boot.img and kernel.img, then reboot:
     return self.partitions[part_name] # (offset, size)
 
   def flash_image(self, part_name, image_file):
-    offset, size = self.get_partition(part_name)
     with self.get_operation() as op:
-      op.flash_image_file(offset, size, image_file)
+      if part_name == '@parameter':
+        op.flash_parameter(image_file)
+      else:
+        offset, size = self.get_partition(part_name)
+        op.flash_image_file(offset, size, image_file)
 
   def compare_imagefile(self, part_name, image_file):
     offset, size = self.get_partition(part_name)
@@ -175,9 +178,12 @@ For example, flash device with boot.img and kernel.img, then reboot:
       op.cmp_part_with_file(offset, size, image_file)
 
   def backup_partition(self, part_name, image_file):
-    offset, size = self.get_partition(part_name)
     with self.get_operation() as op:
-      op.backup_partition(offset, size, image_file)
+      if part_name == '@parameter':
+        op.backup_parameter(image_file)
+      else:
+        offset, size = self.get_partition(part_name)
+        op.backup_partition(offset, size, image_file)
 
   def erase_partition(self, part_name):
     offset, size = self.get_partition(part_name)

@@ -2,10 +2,12 @@
 
 import re
 import time
+import io
 import usb1
+import rkcrc
 
 
-PART_BLOCKSIZE = 0x400 # must be multiple of 512
+PART_BLOCKSIZE = 0x800 # must be multiple of 512
 PART_OFF_INCR  = PART_BLOCKSIZE >> 9
 RKFT_BLOCKSIZE = 0x4000 # must be multiple of 512
 RKFT_OFF_INCR  = RKFT_BLOCKSIZE >> 9
@@ -122,11 +124,10 @@ class RkOperation(object):
     time.sleep(0.02)
 
 
-  def __cmp_part_with_file(self, offset, size, file_name):
-    self.__logger.log('\tComparing partition 0x%08X@0x%08X with file %s\n' % (
-        offset, size, file_name))
-    with open(file_name) as fh:
+  def __cmp_part_with_file(self, offset, size, file_obj):
+    if True:
       while size > 0:
+        fh = file_obj
         if offset % RKFT_DISPLAY == 0:
           self.__logger.log(
               '\treading flash memory at offset 0x%08x\n' % offset)
@@ -152,9 +153,6 @@ class RkOperation(object):
         offset += RKFT_OFF_INCR
         size   -= RKFT_OFF_INCR
 
-    self.__logger.print_done()
-
-
   def load_partitions(self):
     partitions = []
 
@@ -176,16 +174,34 @@ class RkOperation(object):
     self.__logger.print_done()
     return partitions
 
+  def flash_parameter(self, parameter_file):
+    with open(parameter_file) as fh:
+      data = fh.read()
+      buf = rkcrc.make_parameter_image(data)
+    assert len(buf) <= PART_BLOCKSIZE
+    with io.BytesIO(buf) as fh:
+      self.__logger.print_dividor()
+      self.__logger.log('\tWriting parameter file %s\n' % (parameter_file))
+      self.__flash_image_file(0x00000000, PART_BLOCKSIZE, fh)
 
-  def flash_image_file(self, offset, size, file_name):
-    self.__init_device()
-
-    original_offset, original_size = offset, size
-
+  def backup_parameter(self, parameter_file):
     self.__logger.print_dividor()
-    self.__logger.log('\tWriting file %s to partition 0x%08X@0x%08X\n' % (
-        file_name, offset, size))
-    with open(file_name) as fh:
+    self.__logger.log('\tBackuping parameter to file %s\n' % (parameter_file))
+    with io.BytesIO() as fh:
+      self.__dump_partition(0x00000000, PART_BLOCKSIZE, fh)
+      data = fh.getvalue()
+    data = rkcrc.verify_parameter_image(data)
+    if data:
+      with open(parameter_file, 'wb') as f:
+        f.write(data)
+    else:
+      self.__logger.print_error(
+        '\tInvalid parameter file!\n')
+
+  def __flash_image_file(self, offset, size, file_obj):
+    self.__init_device()
+    if True:
+      fh = file_obj
       while size > 0:
         block = fh.read(RKFT_BLOCKSIZE)
         if not block:
@@ -205,28 +221,40 @@ class RkOperation(object):
         offset += RKFT_OFF_INCR
         size   -= RKFT_OFF_INCR
 
-    self.__logger.print_done()
 
-    # Validate partition.
-    self.__logger.log('\n')
-    self.__cmp_part_with_file(original_offset, original_size, file_name)
-
-
-  def cmp_part_with_file(self, offset, size, file_name):
-    self.__init_device()
-    self.__logger.print_dividor()
-    self.__cmp_part_with_file(offset, size, file_name)
-
-
-  def backup_partition(self, offset, size, file_name):
+  def flash_image_file(self, offset, size, file_name):
     self.__init_device()
 
     original_offset, original_size = offset, size
 
     self.__logger.print_dividor()
-    self.__logger.log('\tBackup partition 0x%08X@0x%08X to file %s\n' % (
+    self.__logger.log('\tWriting file %s to partition 0x%08X@0x%08X\n' % (
+        file_name, offset, size))
+    with open(file_name) as fh:
+      self.__flash_image_file(offset, size, fh)
+    self.__logger.print_done()
+
+    # Validate partition.
+    self.__logger.log('\n')
+    self.__logger.log('\tComparing partition 0x%08X@0x%08X with file %s\n' % (
         offset, size, file_name))
-    with open(file_name, 'w') as fh:
+    with open(file_name) as fh:
+      self.__cmp_part_with_file(original_offset, original_size, fh)
+    self.__logger.print_done()
+
+  def cmp_part_with_file(self, offset, size, file_name):
+    self.__init_device()
+    self.__logger.print_dividor()
+    self.__logger.log('\tComparing partition 0x%08X@0x%08X with file %s\n' % (
+        offset, size, file_name))
+    with open(file_name) as fh:
+      self.__cmp_part_with_file(offset, size, fh)
+    self.__logger.print_done()
+
+
+  def __dump_partition(self, offset, size, file_obj):
+    if True:
+      fh = file_obj
       while size > 0:
         if offset % RKFT_DISPLAY == 0:
           self.__logger.log(
@@ -244,11 +272,20 @@ class RkOperation(object):
         offset += RKFT_OFF_INCR
         size   -= RKFT_OFF_INCR
 
+  def backup_partition(self, offset, size, file_name):
+    self.__init_device()
+
+    self.__logger.print_dividor()
+    self.__logger.log('\tBackup partition 0x%08X@0x%08X to file %s\n' % (
+        offset, size, file_name))
+    with open(file_name, 'w') as fh:
+      self.__dump_partition(offset, size, fh)
     self.__logger.print_done()
 
     # Verify backup.
     self.__logger.log('\n')
-    self.__cmp_part_with_file(original_offset, original_size, file_name)
+    with open(file_name) as fh:
+      self.__cmp_part_with_file(offset, size, fh)
 
 
   def erase_partition(self, offset, size):
