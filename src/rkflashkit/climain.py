@@ -4,6 +4,7 @@
 from datetime import datetime
 import time
 import os
+import re
 import rktalk
 
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
@@ -80,11 +81,12 @@ class Operation(object):
     self.op = None #del self.op
 
 class CliMain(object):
+  PARTITION_PATTERN = re.compile(r'0x([0-9a-fA-F]+)@(0x[0-9a-fA-F]+)')
   def __init__(self):
     self.logger = ConsoleLogger(use_color=True)
     self.bus_id = 0
     self.dev_id = 0
-    self.partition = {}
+    self.partitions = {}
 
   def main(self, args):
     if args[0] in ("help", "-h", "--help"):
@@ -93,7 +95,6 @@ class CliMain(object):
     dev = wait_for_one_device()
     self.bus_id = dev[1][0]
     self.dev_id = dev[1][1]
-    self.load_partitions()
     self.parse_and_execute(args)
     return 0
 
@@ -107,7 +108,8 @@ class CliMain(object):
         # flash [@boot boot.img ...]
         args = args[1:]
         while len(args) >= 2 \
-              and args[0][0] == "@":
+              and (args[0].startswith("@") \
+                   or args[0].startswith("0x")):
           self.flash_image(args[0], args[1])
           args = args[2:]
       elif args[0] == "cmp":
@@ -151,7 +153,7 @@ For example, flash device with boot.img and kernel.img, then reboot:
     partitions = {}
     with self.get_operation() as op:
       loaded_parts = op.load_partitions()
-    self.log('Partitions:')
+    self.log('\nPartitions:')
     for size, offset, name in loaded_parts:
       size = int(size, 16)
       offset = int(offset, 16)
@@ -160,9 +162,20 @@ For example, flash device with boot.img and kernel.img, then reboot:
     self.partitions = partitions
 
   def get_partition(self, part_name):
-    if part_name[0] == '@':
-      part_name = part_name[1:]
-    return self.partitions[part_name] # (offset, size)
+    if part_name.startswith('0x'):
+      # 0x????@0x???? : size@offset
+      partitions = self.PARTITION_PATTERN.findall(part_name)
+      if len(partitions) != 1:
+        raise ValueError('Invalid partition %s' %  part_name)
+      print partitions
+      return (int(partitions[0][1], 16),
+              int(partitions[0][0], 16))
+    else:
+      if part_name[0] == '@':
+        part_name = part_name[1:]
+      if not self.partitions:
+        self.load_partitions()
+      return self.partitions[part_name] # (offset, size)
 
   def flash_image(self, part_name, image_file):
     with self.get_operation() as op:
