@@ -103,9 +103,12 @@ class RkOperation(object):
 
 
   def __del__(self):
-    if self.__dev_handle:
-      self.__dev_handle.releaseInterface(0)
-      del self.__dev_handle
+    try:
+      if self.__dev_handle:
+        self.__dev_handle.releaseInterface(0)
+        del self.__dev_handle
+    except Exception as e:
+      pass
     if self.__context:
       del self.__context
 
