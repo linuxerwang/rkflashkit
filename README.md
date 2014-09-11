@@ -1,7 +1,7 @@
 rkflashkit
 ==========
 
-rkflashkit is an open sourced (GPL v2) toolkit for flashing Linux kernel images (Picuntu) to rk3066/rk3188 based devices. It's programmed with python and gtk2. The kernel program is adapted from Galland's rkflashtool_rk3066 which is in turn based on cyteen's rk3066-rkflashtool.
+rkflashkit is an open sourced (GPL v2) toolkit for flashing Linux kernel images (Picuntu) to rk3066/rk3188/rk3288 based devices. It's programmed with python and gtk2. The kernel program is adapted from Galland's rkflashtool_rk3066 which is in turn based on cyteen's rk3066-rkflashtool.
 
 rkflashkit talks to the devices through vpelletier's python-libusb1 which is a python wrapper of libusb. For convenience the python-libusb1 programs are included in rkflashkit. Also included is binary created for Ubuntu.
 
@@ -15,10 +15,13 @@ Features
 * Erase partition.
 * Backup partition. (New)
 * Compare a partition with a image file. (New)
-
+* Command line support. (New)
 
 Change logs:
 ============
+
+Release 0.1.2:
+* Add command line support.
 
 Release 0.1.1:
 * Sticky scrollbar in log view: when appending logs keep scrollbar at the bottom if it's already there.
@@ -47,7 +50,7 @@ $ sudo apt-get install python-gtk2
 
 then
 
-$ sudo dpkg -i rkflashkit_0.1.1_all.deb
+$ sudo dpkg -i rkflashkit_0.1.2_all.deb
 
 You should be able to find an icon in unity dasher or gnome menu.
 
@@ -63,22 +66,22 @@ Command line usage
 ==================
 
 * List NAND Partitions
-$ rkflashkit part
+>$ sudo rkflashkit part
 
 * Flash image
-$ rkflashkit flash @boot boot.img @resource resourse.img
+>$ sudo rkflashkit flash @boot boot.img @resource resourse.img
 
 * Compare partition with image file
-$ rkflashkit cmp @boot boot.img
+>$ sudo rkflashkit cmp @boot boot.img
 
 * Backup partition
-$ rkflashkit backup @boot new_boot.img
+>$ sudo rkflashkit backup @boot new_boot.img
 
 * Erase Partition
-$ rkflashkit erase @boot
+>$ sudo rkflashkit erase @boot
 
 * Reboot Device
-$ rkflashkit reboot
+>$ sudo rkflashkit reboot
 
-Multiple commands can be specified at once.
-$ rkflashkit flash @boot boot.img @resource resourse.img reboot
+Multiple commands can be specified at once:
+>$ sudo rkflashkit flash @boot boot.img @resource resourse.img reboot
