@@ -10,6 +10,12 @@ RKFLASHKIT_PATH = '/usr/share/rkflashkit/lib'
 
 if __name__ == '__main__':
   sys.path.append(RKFLASHKIT_PATH)
+
+  if sys.argv[1:]:
+    from rkflashkit.climain import CliMain
+    app = CliMain()
+    sys.exit(app.main(sys.argv[1:]))
+
   from rkflashkit.main import Application
   app = Application()
   app.main()
