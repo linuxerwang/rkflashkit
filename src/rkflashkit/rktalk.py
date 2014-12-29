@@ -235,7 +235,7 @@ class RkOperation(object):
 
     self.__logger.print_dividor()
     self.__logger.log('\tWriting file %s to partition 0x%08X@0x%08X\n' % (
-        file_name, offset, size))
+        file_name, size, offset))
     with open(file_name) as fh:
       self.__flash_image_file(offset, size, fh)
     self.__logger.print_done()
@@ -243,7 +243,7 @@ class RkOperation(object):
     # Validate partition.
     self.__logger.log('\n')
     self.__logger.log('\tComparing partition 0x%08X@0x%08X with file %s\n' % (
-        offset, size, file_name))
+        size, offset, file_name))
     with open(file_name) as fh:
       self.__cmp_part_with_file(original_offset, original_size, fh)
     self.__logger.print_done()
@@ -283,7 +283,7 @@ class RkOperation(object):
 
     self.__logger.print_dividor()
     self.__logger.log('\tBackup partition 0x%08X@0x%08X to file %s\n' % (
-        offset, size, file_name))
+        size, offset, file_name))
     with open(file_name, 'w') as fh:
       self.__dump_partition(offset, size, fh)
     self.__logger.print_done()
@@ -298,7 +298,7 @@ class RkOperation(object):
     self.__init_device()
 
     self.__logger.print_dividor()
-    self.__logger.log('\tErasing partition 0x%08X@0x%08X\n' % (offset, size))
+    self.__logger.log('\tErasing partition 0x%08X@0x%08X\n' % (size, offset))
     buf = ''.join([chr(0xFF)] * RKFT_BLOCKSIZE)
     while size > 0:
       if offset % RKFT_DISPLAY == 0:
