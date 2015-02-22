@@ -15,9 +15,12 @@ RKFT_DISPLAY   = 0x1000
 
 RK_VENDER_ID   = 0x2207
 RK_PRODUCT_IDS = set([
-  0x290a,
+  0x290a, # RK2906
+  0x292c, # RK3026/RK3028
   0x281a,
   0x300a, # RK3066
+  0x0010, # RK3168 ???
+  0x300b, # RK3168 ???
   0x310b, # RK3188
   0x320a, # RK3288
 ])

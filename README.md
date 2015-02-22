@@ -20,6 +20,9 @@ Features
 Change logs:
 ============
 
+Release 0.1.3:
+* Add support for RK3026/RK3028/RK3168.
+
 Release 0.1.2:
 * Add command line support.
 
@@ -50,7 +53,7 @@ $ sudo apt-get install python-gtk2
 
 then
 
-$ sudo dpkg -i rkflashkit_0.1.2_all.deb
+$ sudo dpkg -i rkflashkit_0.1.3_all.deb
 
 You should be able to find an icon in unity dasher or gnome menu.
 
