@@ -137,7 +137,7 @@ class RkOperation(object):
         fh = file_obj
         if offset % RKFT_DISPLAY == 0:
           self.__logger.log(
-              '\treading flash memory at offset 0x%08x\n' % offset)
+              '\treading flash memory at offset 0x%08X\n' % offset)
 
         block1 = fh.read(RKFT_BLOCKSIZE)
         self.__dev_handle.bulkWrite(
@@ -148,14 +148,14 @@ class RkOperation(object):
         if len(block1) == len(block2):
           if block1 != block2:
             self.__logger.print_error(
-                '\tFlash memory at 0x%08x is differnt from file!\n' % offset)
+                '\tFlash memory at 0x%08X is differnt from file!\n' % offset)
         else:
           if len(block1) == 0:
             break
           block2 = block2[:len(block1)]
           if block1 != block2:
             self.__logger.print_error(
-                '\tFlash memory at 0x%08x is differnt from file!\n' % offset)
+                '\tFlash memory at 0x%08X is differnt from file!\n' % offset)
 
         offset += RKFT_OFF_INCR
         size   -= RKFT_OFF_INCR
@@ -255,7 +255,7 @@ class RkOperation(object):
 
         if offset % RKFT_DISPLAY == 0:
           self.__logger.log(
-              '\twriting flash memory at offset 0x%08x\n' % offset)
+              '\twriting flash memory at offset 0x%08X\n' % offset)
 
         self.__dev_handle.bulkWrite(
             2, ''.join(prepare_cmd(0x80, 0x000a1500, offset, RKFT_OFF_INCR)))
@@ -272,7 +272,7 @@ class RkOperation(object):
     original_offset, original_size = offset, size
 
     self.__logger.print_dividor()
-    self.__logger.log('\tWriting file %s to partition 0x%08X@0x%08X\n' % (
+    self.__logger.log('\tWriting file %s to partition 0x%08X@0x%08X\n\n' % (
         file_name, size, offset))
     with open(file_name) as fh:
       self.__flash_image_file(offset, size, fh)
@@ -280,7 +280,7 @@ class RkOperation(object):
 
     # Validate partition.
     self.__logger.log('\n')
-    self.__logger.log('\tComparing partition 0x%08X@0x%08X with file %s\n' % (
+    self.__logger.log('\tComparing partition 0x%08X@0x%08X with file %s\n\n' % (
         size, offset, file_name))
     with open(file_name) as fh:
       self.__cmp_part_with_file(original_offset, original_size, fh)
@@ -289,7 +289,7 @@ class RkOperation(object):
   def cmp_part_with_file(self, offset, size, file_name):
     self.__init_device()
     self.__logger.print_dividor()
-    self.__logger.log('\tComparing partition 0x%08X@0x%08X with file %s\n' % (
+    self.__logger.log('\tComparing partition 0x%08X@0x%08X with file %s\n\n' % (
         offset, size, file_name))
     with open(file_name) as fh:
       self.__cmp_part_with_file(offset, size, fh)
@@ -302,7 +302,7 @@ class RkOperation(object):
       while size > 0:
         if offset % RKFT_DISPLAY == 0:
           self.__logger.log(
-              '\treading flash memory at offset 0x%08x\n' % offset)
+              '\treading flash memory at offset 0x%08X\n' % offset)
 
         self.__dev_handle.bulkWrite(
             2, ''.join(prepare_cmd(0x80, 0x000a1400, offset, RKFT_OFF_INCR)))
@@ -320,7 +320,7 @@ class RkOperation(object):
     self.__init_device()
 
     self.__logger.print_dividor()
-    self.__logger.log('\tBackup partition 0x%08X@0x%08X to file %s\n' % (
+    self.__logger.log('\tBackup partition 0x%08X@0x%08X to file %s\n\n' % (
         size, offset, file_name))
     with open(file_name, 'w') as fh:
       self.__dump_partition(offset, size, fh)
@@ -336,12 +336,12 @@ class RkOperation(object):
     self.__init_device()
 
     self.__logger.print_dividor()
-    self.__logger.log('\tErasing partition 0x%08X@0x%08X\n' % (size, offset))
+    self.__logger.log('\tErasing partition 0x%08X@0x%08X\n\n' % (size, offset))
     buf = ''.join([chr(0xFF)] * RKFT_BLOCKSIZE)
     while size > 0:
       if offset % RKFT_DISPLAY == 0:
         self.__logger.log(
-            '\terasing flash memory at offset 0x%08x\n' % offset)
+            '\terasing flash memory at offset 0x%08X\n' % offset)
 
       self.__dev_handle.bulkWrite(
           2, ''.join(prepare_cmd(0x80, 0x000a1500, offset, RKFT_OFF_INCR)))

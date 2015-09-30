@@ -4,6 +4,7 @@
 from datetime import datetime
 import time
 import os
+import sys
 import re
 import rktalk
 
@@ -32,7 +33,7 @@ class ConsoleLogger(object):
         self.RESET_COLOR = format(reset=True)
 
   def log(self, message):
-      print message
+      sys.stdout.write(message)
 
   def print_dividor(self):
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -40,11 +41,11 @@ class ConsoleLogger(object):
       self.WARN_COLOR, current_time, self.RESET_COLOR))
 
   def print_done(self):
-    self.log('\t%sDone!%s\n' % (self.SUCC_COLOR, self.RESET_COLOR))
+    self.log('\n\t%sDone!%s\n' % (self.SUCC_COLOR, self.RESET_COLOR))
 
 
   def print_error(self, message):
-    self.log('%sERROR:%s %s' % (self.WARN_COLOR, self.RESET_COLOR, message))
+    self.log('\n%sERROR:%s %s' % (self.WARN_COLOR, self.RESET_COLOR, message))
 
 def get_devices():
   device_store = []

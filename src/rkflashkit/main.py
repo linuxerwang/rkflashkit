@@ -393,8 +393,8 @@ class MainWindow(gtk.Window):
         partitions = op.load_partitions()
         for size, offset, name in partitions:
           self.__partition_liststore.append(
-              ['%s (%s @ %s)' % (name, size, offset),
-               int(offset, 16), int(size, 16)])
+              ['%s (0x%08X @ 0x%08X)' % (name, size, offset),
+               offset, size])
       finally:
         if op: del op
 
