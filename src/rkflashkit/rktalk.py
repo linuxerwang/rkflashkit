@@ -26,7 +26,7 @@ RK_PRODUCT_IDS = set([
   0x320a, # RK3288
 ])
 
-PARTITION_PATTERN = re.compile(r'0x([0-9a-fA-F]*?)@(0x[0-9a-fA-F]*?)\((.*?)\)')
+PARTITION_PATTERN = re.compile(r'(-|0x[0-9a-fA-F]+)@(0x[0-9a-fA-F]+)\((.*?)\)')
 
 RKFT_CID     = 4
 RKFT_FLAG    = 12
@@ -166,20 +166,57 @@ class RkOperation(object):
     self.__init_device()
 
     self.__logger.print_dividor()
+    self.__logger.log('\tReading flash information\n')
+    self.__dev_handle.bulkWrite(
+        2, ''.join(prepare_cmd(0x80, 0x00061a00, 0x00000000, 0x00000000)))
+    content = self.__dev_handle.bulkRead(1, 512)
+    self.__dev_handle.bulkRead(1, 13)
+    flash_size = (ord(content[0])) | (ord(content[1]) << 8) | (ord(content[2]) << 16) | (ord(content[3]) << 24)
+
     self.__logger.log('\tLoading partition information\n')
     self.__dev_handle.bulkWrite(
         2, ''.join(prepare_cmd(0x80, 0x000a1400, 0x00000000, PART_OFF_INCR)))
-
     content = self.__dev_handle.bulkRead(1, PART_BLOCKSIZE)
     self.__dev_handle.bulkRead(1, 13)
+
     for line in content.split('\n'):
       self.__logger.log('\t%s' % line)
       if line.startswith('CMDLINE:'):
         # return a list of tuple (size, unused, offset, part_name)
-        return re.findall(PARTITION_PATTERN, line)
-
+        self.__logger.log('\n\n\tPartitions:\n')
+        for size, offset, name in re.findall(PARTITION_PATTERN, line):
+          offset = int(offset, 16)
+          if size == '-':
+            size = flash_size - offset
+          else:
+            size = int(size, 16)
+          self.__logger.log('\t%-12s (0x%08X @ 0x%08X) %4d MiB\n' % (name, size, offset, size * 512 / 1024 / 1024))
+          partitions.append((size, offset, name))
+        break
     self.__logger.print_done()
     return partitions
+
+  def read_flashinfo(self):
+    self.__init_device()
+
+    self.__logger.print_dividor()
+    self.__logger.log('\tReading flash information\n')
+    self.__dev_handle.bulkWrite(
+        2, ''.join(prepare_cmd(0x80, 0x00061a00, 0x00000000, 0x00000000)))
+    content = self.__dev_handle.bulkRead(1, 512)
+    self.__dev_handle.bulkRead(1, 13)
+    # uint32_t flash_size;
+    # uint16_t block_size;
+    # uint8_t page_size;
+    # uint8_t ecc_bits;
+    # uint8_t access_time;
+    # uint8_t manufacturer_id;
+    # uint8_t chip_select;
+    # only return flash_size here
+    flash_size = (ord(content[0])) | (ord(content[1]) << 8) | (ord(content[2]) << 16) | (ord(content[3]) << 24)
+    self.__logger.log('Flash size: %.2f GiB' % (flash_size * 512.0 / 1024 / 1024 / 1024))
+    self.__logger.print_done()
+    return (flash_size, )
 
   def flash_parameter(self, parameter_file):
     with open(parameter_file) as fh:
