@@ -20,6 +20,11 @@ Features
 Change logs:
 ============
 
+Release 0.1.4:
+* Add support for RK3128.
+* Add last partition ('-' in size) operation support.
+* Clean prompt and log messages.
+
 Release 0.1.3:
 * Add support for RK3026/RK3028/RK3168.
 
@@ -53,7 +58,7 @@ $ sudo apt-get install python-gtk2
 
 then
 
-$ sudo dpkg -i rkflashkit_0.1.3_all.deb
+$ sudo dpkg -i rkflashkit_0.1.4_all.deb
 
 You should be able to find an icon in unity dasher or gnome menu.
 

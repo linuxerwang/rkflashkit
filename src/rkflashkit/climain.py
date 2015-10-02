@@ -4,6 +4,7 @@
 from datetime import datetime
 import time
 import os
+import sys
 import re
 import rktalk
 
@@ -32,7 +33,7 @@ class ConsoleLogger(object):
         self.RESET_COLOR = format(reset=True)
 
   def log(self, message):
-      print message
+      sys.stdout.write(message)
 
   def print_dividor(self):
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -40,11 +41,11 @@ class ConsoleLogger(object):
       self.WARN_COLOR, current_time, self.RESET_COLOR))
 
   def print_done(self):
-    self.log('\t%sDone!%s\n' % (self.SUCC_COLOR, self.RESET_COLOR))
+    self.log('\n\t%sDone!%s\n' % (self.SUCC_COLOR, self.RESET_COLOR))
 
 
   def print_error(self, message):
-    self.log('%sERROR:%s %s' % (self.WARN_COLOR, self.RESET_COLOR, message))
+    self.log('\n%sERROR:%s %s' % (self.WARN_COLOR, self.RESET_COLOR, message))
 
 def get_devices():
   device_store = []
@@ -81,7 +82,7 @@ class Operation(object):
     self.op = None #del self.op
 
 class CliMain(object):
-  PARTITION_PATTERN = re.compile(r'0x([0-9a-fA-F]+)@(0x[0-9a-fA-F]+)')
+  PARTITION_PATTERN = re.compile(r'(0x[0-9a-fA-F]+)@(0x[0-9a-fA-F]+)')
   def __init__(self):
     self.logger = ConsoleLogger(use_color=True)
     self.bus_id = 0
@@ -153,12 +154,8 @@ For example, flash device with boot.img and kernel.img, then reboot:
     partitions = {}
     with self.get_operation() as op:
       loaded_parts = op.load_partitions()
-    self.log('\nPartitions:')
     for size, offset, name in loaded_parts:
-      size = int(size, 16)
-      offset = int(offset, 16)
       partitions[name] = (offset, size)
-      self.log('%-12s (0x%08x @ 0x%08x) %4d MiB' % (name, size, offset, size * 512 / 1024 / 1024))
     self.partitions = partitions
 
   def get_partition(self, part_name):

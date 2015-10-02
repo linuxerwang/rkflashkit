@@ -19,7 +19,7 @@ MESSAGE_FLASH = (
     'Are you sure to flash image file %s to partition "%s"?')
 MESSAGE_COMPARE = (
     'Are you sure to compare partition "%s" with image file %s?')
-MESSAGE_ERASE = 'Are you sure to erase partition 0x%08X@0x%08X?'
+MESSAGE_ERASE = 'Are you sure to erase partition %s?'
 MESSAGE_REBOOT = 'Are you sure to reboot the device?'
 
 
@@ -340,9 +340,9 @@ class MainWindow(gtk.Window):
   def __erase_partition(self, widget):
     device_info, = self.__device_liststore.get(
         self.__device_selector.get_active_iter(), 1)
-    offset, size = self.__partition_liststore.get(
-        self.__partition_selector.get_active_iter(), 1, 2)
-    message = MESSAGE_ERASE % (offset, size)
+    offset, size, part_name = self.__partition_liststore.get(
+        self.__partition_selector.get_active_iter(), 1, 2, 0)
+    message = MESSAGE_ERASE % part_name
     if confirm(self, message):
       op = None
       try:
@@ -393,8 +393,8 @@ class MainWindow(gtk.Window):
         partitions = op.load_partitions()
         for size, offset, name in partitions:
           self.__partition_liststore.append(
-              ['%s (%s @ %s)' % (name, size, offset),
-               int(offset, 16), int(size, 16)])
+              ['%s (0x%08X@0x%08X)' % (name, size, offset),
+               offset, size])
       finally:
         if op: del op
 
