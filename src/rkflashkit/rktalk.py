@@ -26,6 +26,7 @@ RK_PRODUCT_IDS = set([
   0x310c, # RK3128
   0x320a, # RK3288
   0x320b, # RK3229
+  0x330c, # RK3399
 ])
 
 PARTITION_PATTERN = re.compile(r'(-|0x[0-9a-fA-F]+)@(0x[0-9a-fA-F]+)\((.*?)\)')
