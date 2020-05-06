@@ -4,7 +4,7 @@ import re
 import time
 import io
 import usb1
-import rkcrc
+from . import rkcrc
 
 
 PART_BLOCKSIZE = 0x800 # must be multiple of 512

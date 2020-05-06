@@ -1,16 +1,17 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 # -*- coding: utf-8 -*
 
 from datetime import datetime
 
-import pygtk
-pygtk.require('2.0')
+import gi
+gi.require_version('Gtk', '3.0')
+gi.require_version('Pango', '1.0')
 
-import glib
-import gtk
+from gi.repository import GLib as glib
+from gi.repository import Gtk as gtk
+from gi.repository import Pango as pango
 import os
-import pango
-import rktalk
+from . import rktalk
 
 
 DEFAULT_WINDOW_WIDTH  = 1000
@@ -23,26 +24,26 @@ MESSAGE_ERASE = 'Are you sure to erase partition %s?'
 MESSAGE_REBOOT = 'Are you sure to reboot the device?'
 
 
-def wrap_with_scorlled_window(widget):
+def wrap_with_scrolled_window(widget):
   scroll = gtk.ScrolledWindow()
   scroll.add(widget)
-  scroll.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-  scroll.set_shadow_type(gtk.SHADOW_ETCHED_IN)
+  scroll.set_policy(gtk.PolicyType.AUTOMATIC, gtk.PolicyType.AUTOMATIC)
+  scroll.set_shadow_type(gtk.ShadowType.ETCHED_IN)
   scroll.set_border_width(1)
   return scroll
 
 
 def confirm(parent, message):
   dialog = gtk.Dialog(message, parent, gtk.DIALOG_MODAL, (
-      gtk.STOCK_YES, gtk.RESPONSE_YES,
-      gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+      gtk.STOCK_YES, gtk.ResponseType.YES,
+      gtk.STOCK_CANCEL, gtk.ResponseType.CANCEL,
   ))
-  dialog.vbox.pack_start(gtk.Label(message))
+  dialog.vbox.pack_start(gtk.Label(message), expand=True, fill=True, padding=0)
   dialog.vbox.show_all()
 
   try:
     response = dialog.run()
-    if response == gtk.RESPONSE_YES:
+    if response == gtk.ResponseType.YES:
       return True
   finally:
     dialog.destroy()
@@ -52,7 +53,8 @@ def confirm(parent, message):
 
 class BoxFrame(gtk.Frame):
   def __init__(self, caption, opt_hbox=True, spacing=0):
-    gtk.Frame.__init__(self, caption)
+    gtk.Frame.__init__(self)
+    self.set_label(caption)
     if opt_hbox:
       self.__box = gtk.HBox(spacing=spacing)
     else:
@@ -74,11 +76,11 @@ class Logger(object):
         None, self.__text_buffer.get_end_iter(), True)
     self.__first_dividor = True
     self.__dividor_tag = self.__text_buffer.create_tag(
-        'dividor', weight=pango.WEIGHT_BOLD, foreground="#FF0000")
+        'dividor', weight=pango.Weight.BOLD, foreground="#FF0000")
     self.__done_tag = self.__text_buffer.create_tag(
-        'done', weight=pango.WEIGHT_BOLD, foreground="#00FF00")
+        'done', weight=pango.Weight.BOLD, foreground="#00FF00")
     self.__error_tag = self.__text_buffer.create_tag(
-        'error', weight=pango.WEIGHT_BOLD, foreground="#FF0000")
+        'error', weight=pango.Weight.BOLD, foreground="#FF0000")
 
 
   def log(self, message, tag=None):
@@ -90,13 +92,13 @@ class Logger(object):
 
     size1 = self.__vadjustment.get_upper() - self.__vadjustment.get_lower()
     size2 = self.__vadjustment.get_value() + self.__vadjustment.get_page_size()
-    print size1, size2
+    print(size1, size2)
     if (size1 - size2) * (size1 - size2) < 3.0 * 3.0:
       # Sticky scrollbar: once the scroll bar was at the end of the text view,
       # keep it at the end when appending log messages.
       self.__text_buffer.move_mark(
           self.__end_mark, self.__text_buffer.get_end_iter())
-      self.__text_view.scroll_to_mark(self.__end_mark, 0.0)
+      self.__text_view.scroll_to_mark(self.__end_mark, 0.0, False, 0.0, 0.0)
 
     # Make the UI responsive
     while gtk.events_pending(): gtk.main_iteration()
@@ -124,7 +126,7 @@ class MainWindow(gtk.Window):
     self.__last_backup_dir = None
 
     self.set_title('RkFlashKit')
-    self.set_icon(self.render_icon('rkflashkit', gtk.ICON_SIZE_MENU))
+    self.set_icon(self.render_icon('rkflashkit', gtk.IconSize.MENU))
     self.connect('delete_event', self.__on_delete_window)
     self.set_default_size(DEFAULT_WINDOW_WIDTH, 650)
 
@@ -157,79 +159,79 @@ class MainWindow(gtk.Window):
     # Device selector
 
     frame = BoxFrame('Devices')
-    box.pack_start(frame, expand=False)
+    box.pack_start(frame, expand=False, fill=True, padding=0)
 
     self.__device_liststore = gtk.ListStore(str, object)
-    self.__device_selector = gtk.ComboBox(self.__device_liststore)
+    self.__device_selector = gtk.ComboBox.new_with_model_and_entry(self.__device_liststore)
     cell = gtk.CellRendererText()
     self.__device_selector.pack_start(cell, True)
     self.__device_selector.add_attribute(cell, 'text', 0)
     self.__device_selector.connect('changed', self.__on_device_changed)
-    frame.pack_start(self.__device_selector)
+    frame.pack_start(self.__device_selector, expand=True, fill=True, padding=0)
 
     # NAND partition selector
 
     frame = BoxFrame('NAND Partitions')
-    box.pack_start(frame, expand=False)
+    box.pack_start(frame, expand=False, fill=True, padding=0)
 
     self.__partition_liststore = gtk.ListStore(str, int, int)
-    self.__partition_selector = gtk.ComboBox(self.__partition_liststore)
+    self.__partition_selector = gtk.ComboBox.new_with_model_and_entry(self.__partition_liststore)
     cell = gtk.CellRendererText()
     self.__partition_selector.pack_start(cell, True)
     self.__partition_selector.add_attribute(cell, 'text', 0)
     self.__partition_selector.connect('changed', self.__refresh_buttons)
-    frame.pack_start(self.__partition_selector)
+    frame.pack_start(self.__partition_selector, expand=True, fill=True, padding=0)
 
     # Image file selector
 
     frame = BoxFrame('Image File to Flash')
-    box.pack_start(frame, expand=False)
+    box.pack_start(frame, expand=False, fill=True, padding=0)
 
     self.__image_entry = gtk.Entry()
     self.__image_entry.connect('changed', self.__refresh_buttons)
-    frame.pack_start(self.__image_entry)
+    frame.pack_start(self.__image_entry, expand=True, fill=True, padding=0)
 
     self.__image_select_button = gtk.Button('Choose')
     self.__image_select_button.connect('clicked', self.__choose_image_file)
-    frame.pack_start(self.__image_select_button, expand=False, fill=False)
+    frame.pack_start(self.__image_select_button, expand=False, fill=False, padding=0)
 
     # Action buttons
 
     frame = BoxFrame('Actions', opt_hbox=False, spacing=20)
-    box.pack_start(frame, expand=False)
+    box.pack_start(frame, expand=False, fill=True, padding=0)
 
     self.__flash_button = gtk.Button('Flash image')
     self.__flash_button.connect('clicked', self.__flash_image_file)
-    frame.pack_start(self.__flash_button, expand=False, fill=False)
+    frame.pack_start(self.__flash_button, expand=False, fill=False, padding=0)
 
     self.__cmp_button = gtk.Button('Compare partition with image file')
     self.__cmp_button.connect('clicked', self.__cmp_part_with_file)
-    frame.pack_start(self.__cmp_button, expand=False, fill=False)
+    frame.pack_start(self.__cmp_button, expand=False, fill=False, padding=0)
 
     self.__backup_button = gtk.Button('Backup Partition')
     self.__backup_button.connect('clicked', self.__backup_partition)
-    frame.pack_start(self.__backup_button, expand=False, fill=False)
+    frame.pack_start(self.__backup_button, expand=False, fill=False, padding=0)
 
     self.__erase_button = gtk.Button('Erase Partition')
     self.__erase_button.connect('clicked', self.__erase_partition)
-    frame.pack_start(self.__erase_button, expand=False, fill=False)
+    frame.pack_start(self.__erase_button, expand=False, fill=False, padding=0)
 
     self.__reboot_button = gtk.Button('Reboot Device')
     self.__reboot_button.connect('clicked', self.__reboot_device)
-    frame.pack_start(self.__reboot_button, expand=False, fill=False)
+    frame.pack_start(self.__reboot_button, expand=False, fill=False, padding=0)
 
     self.__clear_log_button = gtk.Button('Clear Log')
     self.__clear_log_button.connect('clicked', self.__clear_log)
-    frame.pack_start(self.__clear_log_button, expand=False, fill=False)
+    frame.pack_start(self.__clear_log_button, expand=False, fill=False, padding=0)
 
 
   def __create_right_ui(self, box):
     self.__log_text_view = gtk.TextView()
     self.__log_text_view.set_editable(False)
-    self.__log_text_view.set_wrap_mode(gtk.WRAP_CHAR)
-    scroll_window = wrap_with_scorlled_window(self.__log_text_view)
+    self.__log_text_view.set_wrap_mode(gtk.WrapMode.CHAR)
+    scroll_window = wrap_with_scrolled_window(self.__log_text_view)
     self.__logger = Logger(self.__log_text_view, scroll_window)
-    box.pack_start(scroll_window)
+    box.pack_start(scroll_window, expand=True, fill=True, padding=0)
 
 
   def __on_delete_window(self, window, event):
@@ -245,9 +247,9 @@ class MainWindow(gtk.Window):
     file_chooser = gtk.FileChooserDialog(
         'Choose Image File to Flash',
         self,
-        gtk.FILE_CHOOSER_ACTION_OPEN, (
-            gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-            gtk.STOCK_OK, gtk.RESPONSE_OK)
+        gtk.FileChooserAction.OPEN , (
+            gtk.STOCK_CANCEL, gtk.ResponseType.CANCEL,
+            gtk.STOCK_OK, gtk.ResponseType.OK)
     )
 
     current_file = self.__image_entry.get_text().strip()
@@ -256,7 +258,7 @@ class MainWindow(gtk.Window):
 
     try:
       response = file_chooser.run()
-      if response == gtk.RESPONSE_OK:
+      if response == gtk.ResponseType.OK:
         self.__image_entry.set_text(file_chooser.get_filename())
     finally:
       file_chooser.destroy()
@@ -299,15 +301,15 @@ class MainWindow(gtk.Window):
         'Create a Backup File',
         self,
         gtk.FILE_CHOOSER_ACTION_SAVE, (
-            gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-            gtk.STOCK_OK, gtk.RESPONSE_OK)
+            gtk.STOCK_CANCEL, gtk.ResponseType.CANCEL,
+            gtk.STOCK_OK, gtk.ResponseType.OK)
     )
     if self.__last_backup_dir:
       file_chooser.set_current_folder(self.__last_backup_dir)
 
     try:
       response = file_chooser.run()
-      if response == gtk.RESPONSE_OK:
+      if response == gtk.ResponseType.OK:
         self.__last_backup_dir = os.path.dirname(file_chooser.get_filename())
         return file_chooser.get_filename()
     finally:
