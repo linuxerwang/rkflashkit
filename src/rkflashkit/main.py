@@ -34,7 +34,7 @@ def wrap_with_scrolled_window(widget):
 
 
 def confirm(parent, message):
-  dialog = gtk.Dialog(message, parent, gtk.DIALOG_MODAL, (
+  dialog = gtk.Dialog(message, parent, gtk.DialogFlags.MODAL, (
       gtk.STOCK_YES, gtk.ResponseType.YES,
       gtk.STOCK_CANCEL, gtk.ResponseType.CANCEL,
   ))
@@ -162,7 +162,7 @@ class MainWindow(gtk.Window):
     box.pack_start(frame, expand=False, fill=True, padding=0)
 
     self.__device_liststore = gtk.ListStore(str, object)
-    self.__device_selector = gtk.ComboBox.new_with_model_and_entry(self.__device_liststore)
+    self.__device_selector = gtk.ComboBox.new_with_model(self.__device_liststore)
     cell = gtk.CellRendererText()
     self.__device_selector.pack_start(cell, True)
     self.__device_selector.add_attribute(cell, 'text', 0)
@@ -175,7 +175,7 @@ class MainWindow(gtk.Window):
     box.pack_start(frame, expand=False, fill=True, padding=0)
 
     self.__partition_liststore = gtk.ListStore(str, int, int)
-    self.__partition_selector = gtk.ComboBox.new_with_model_and_entry(self.__partition_liststore)
+    self.__partition_selector = gtk.ComboBox.new_with_model(self.__partition_liststore)
     cell = gtk.CellRendererText()
     self.__partition_selector.pack_start(cell, True)
     self.__partition_selector.add_attribute(cell, 'text', 0)
@@ -300,7 +300,7 @@ class MainWindow(gtk.Window):
     file_chooser = gtk.FileChooserDialog(
         'Create a Backup File',
         self,
-        gtk.FILE_CHOOSER_ACTION_SAVE, (
+        gtk.FileChooserAction.SAVE, (
             gtk.STOCK_CANCEL, gtk.ResponseType.CANCEL,
             gtk.STOCK_OK, gtk.ResponseType.OK)
     )
