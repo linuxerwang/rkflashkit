@@ -4,7 +4,7 @@ import re
 import time
 import io
 import usb1
-import rkcrc
+from . import rkcrc
 
 
 PART_BLOCKSIZE = 0x800 # must be multiple of 512
@@ -52,30 +52,32 @@ RKFT_FLAG    = 12
 RKFT_COMMAND = 13
 RKFT_OFFSET  = 17
 RKFT_SIZE    = 23
-USB_CMD = [chr(0)] * 31
-USB_CMD[0:4] = 'USBC'
+USB_CMD = [0] * 31
+USB_CMD[0:4] = [ord('U'), ord('S'), ord('B'), ord('C')]
 global_cmd_id = -1
 
 
 def next_cmd_id():
   global global_cmd_id
   global_cmd_id = (global_cmd_id + 1) & 0xFF
-  return chr(global_cmd_id)
+  return global_cmd_id
 
 
 def prepare_cmd(flag, command, offset, size):
   USB_CMD[RKFT_CID ] = next_cmd_id();
-  USB_CMD[RKFT_FLAG] = chr(flag);
-  USB_CMD[RKFT_SIZE] = chr(size);
-  USB_CMD[RKFT_COMMAND    ] = chr((command >> 24) & 0xFF)
-  USB_CMD[RKFT_COMMAND + 1] = chr((command >> 16) & 0xFF)
-  USB_CMD[RKFT_COMMAND + 2] = chr((command >>  8) & 0xFF)
-  USB_CMD[RKFT_COMMAND + 3] = chr((command      ) & 0xFF)
-  USB_CMD[RKFT_OFFSET     ] = chr((offset  >> 24) & 0xFF)
-  USB_CMD[RKFT_OFFSET  + 1] = chr((offset  >> 16) & 0xFF)
-  USB_CMD[RKFT_OFFSET  + 2] = chr((offset  >>  8) & 0xFF)
-  USB_CMD[RKFT_OFFSET  + 3] = chr((offset       ) & 0xFF)
-  return USB_CMD
+  USB_CMD[RKFT_FLAG] = flag;
+  USB_CMD[RKFT_SIZE] = size;
+  USB_CMD[RKFT_COMMAND    ] = (command >> 24) & 0xFF
+  USB_CMD[RKFT_COMMAND + 1] = (command >> 16) & 0xFF
+  USB_CMD[RKFT_COMMAND + 2] = (command >>  8) & 0xFF
+  USB_CMD[RKFT_COMMAND + 3] = (command      ) & 0xFF
+  USB_CMD[RKFT_OFFSET     ] = (offset  >> 24) & 0xFF
+  USB_CMD[RKFT_OFFSET  + 1] = (offset  >> 16) & 0xFF
+  USB_CMD[RKFT_OFFSET  + 2] = (offset  >>  8) & 0xFF
+  USB_CMD[RKFT_OFFSET  + 3] = (offset       ) & 0xFF
+  bs = bytes(USB_CMD)
+
+  return bs
 
 
 def is_rk_device(device):
@@ -147,7 +149,7 @@ class RkOperation(object):
 
     # Init
     self.__dev_handle.bulkWrite(self.__write_endpoint,
-        ''.join(prepare_cmd(0x80, 0x00060000, 0x00000000, 0x00000000)))
+        prepare_cmd(0x80, 0x00060000, 0x00000000, 0x00000000))
     self.__dev_handle.bulkRead(self.__read_endpoint, 13)
 
     # sleep for 20ms
@@ -164,7 +166,7 @@ class RkOperation(object):
 
         block1 = fh.read(RKFT_BLOCKSIZE)
         self.__dev_handle.bulkWrite(self.__write_endpoint,
-            ''.join(prepare_cmd(0x80, 0x000a1400, offset, RKFT_OFF_INCR)))
+            prepare_cmd(0x80, 0x000a1400, offset, RKFT_OFF_INCR))
         block2 = self.__dev_handle.bulkRead(self.__read_endpoint,
             RKFT_BLOCKSIZE)
         self.__dev_handle.bulkRead(self.__read_endpoint, 13)
@@ -192,19 +194,20 @@ class RkOperation(object):
     self.__logger.print_dividor()
     self.__logger.log('\tReading flash information\n')
     self.__dev_handle.bulkWrite(self.__write_endpoint,
-        ''.join(prepare_cmd(0x80, 0x00061a00, 0x00000000, 0x00000000)))
+        prepare_cmd(0x80, 0x00061a00, 0x00000000, 0x00000000))
     content = self.__dev_handle.bulkRead(self.__read_endpoint, 512)
     self.__dev_handle.bulkRead(self.__read_endpoint, 13)
-    flash_size = (ord(content[0])) | (ord(content[1]) << 8) | (ord(content[2]) << 16) | (ord(content[3]) << 24)
+    flash_size = int.from_bytes(content[0:4], "little")
 
     self.__logger.log('\tLoading partition information\n')
     self.__dev_handle.bulkWrite(self.__write_endpoint,
-        ''.join(prepare_cmd(0x80, 0x000a1400, 0x00000000, PART_OFF_INCR)))
+        prepare_cmd(0x80, 0x000a1400, 0x00000000, PART_OFF_INCR))
     content = self.__dev_handle.bulkRead(self.__read_endpoint, PART_BLOCKSIZE)
     self.__dev_handle.bulkRead(self.__read_endpoint, 13)
 
-    for line in content.split('\n'):
-      self.__logger.log('\t%s' % line)
+    cstr = content.decode(encoding='utf-8', errors='ignore')
+    for line in cstr.split('\n'):
+      self.__logger.log('\t%s\n' % line)
       if line.startswith('CMDLINE:'):
         # return a list of tuple (size, unused, offset, part_name)
         self.__logger.log('\n\n\tPartitions:\n')
@@ -226,7 +229,7 @@ class RkOperation(object):
     self.__logger.print_dividor()
     self.__logger.log('\tReading flash information\n')
     self.__dev_handle.bulkWrite(self.__write_endpoint,
-        ''.join(prepare_cmd(0x80, 0x00061a00, 0x00000000, 0x00000000)))
+        prepare_cmd(0x80, 0x00061a00, 0x00000000, 0x00000000))
     content = self.__dev_handle.bulkRead(self.__read_endpoint, 512)
     self.__dev_handle.bulkRead(self.__read_endpoint, 13)
     # uint32_t flash_size;
@@ -237,13 +240,13 @@ class RkOperation(object):
     # uint8_t manufacturer_id;
     # uint8_t chip_select;
     # only return flash_size here
-    flash_size = (ord(content[0])) | (ord(content[1]) << 8) | (ord(content[2]) << 16) | (ord(content[3]) << 24)
+    flash_size = int.from_bytes(content[0:4], "little")
     self.__logger.log('Flash size: %.2f GiB' % (flash_size * 512.0 / 1024 / 1024 / 1024))
     self.__logger.print_done()
     return (flash_size, )
 
   def flash_parameter(self, parameter_file):
-    with open(parameter_file) as fh:
+    with open(parameter_file, 'rb') as fh:
       data = fh.read()
       buf = rkcrc.make_parameter_image(data)
     assert len(buf) <= PART_BLOCKSIZE
@@ -282,7 +285,7 @@ class RkOperation(object):
               '\twriting flash memory at offset 0x%08X\n' % offset)
 
         self.__dev_handle.bulkWrite(self.__write_endpoint,
-            ''.join(prepare_cmd(0x80, 0x000a1500, offset, RKFT_OFF_INCR)))
+            prepare_cmd(0x80, 0x000a1500, offset, RKFT_OFF_INCR))
         self.__dev_handle.bulkWrite(self.__write_endpoint, str(buf))
         self.__dev_handle.bulkRead(self.__read_endpoint, 13)
 
@@ -290,6 +293,7 @@ class RkOperation(object):
         size   -= RKFT_OFF_INCR
 
 
+  #FIXME need test
   def flash_image_file(self, offset, size, file_name):
     self.__init_device()
 
@@ -298,7 +302,7 @@ class RkOperation(object):
     self.__logger.print_dividor()
     self.__logger.log('\tWriting file %s to partition 0x%08X@0x%08X\n\n' % (
         file_name, size, offset))
-    with open(file_name) as fh:
+    with open(file_name, 'rb') as fh:
       self.__flash_image_file(offset, size, fh)
     self.__logger.print_done()
 
@@ -306,7 +310,7 @@ class RkOperation(object):
     self.__logger.log('\n')
     self.__logger.log('\tComparing partition 0x%08X@0x%08X with file %s\n\n' % (
         size, offset, file_name))
-    with open(file_name) as fh:
+    with open(file_name, 'rb') as fh:
       self.__cmp_part_with_file(original_offset, original_size, fh)
     self.__logger.print_done()
 
@@ -315,7 +319,7 @@ class RkOperation(object):
     self.__logger.print_dividor()
     self.__logger.log('\tComparing partition 0x%08X@0x%08X with file %s\n\n' % (
         offset, size, file_name))
-    with open(file_name) as fh:
+    with open(file_name, 'rb') as fh:
       self.__cmp_part_with_file(offset, size, fh)
     self.__logger.print_done()
 
@@ -329,7 +333,7 @@ class RkOperation(object):
               '\treading flash memory at offset 0x%08X\n' % offset)
 
         self.__dev_handle.bulkWrite(self.__write_endpoint,
-            ''.join(prepare_cmd(0x80, 0x000a1400, offset, RKFT_OFF_INCR)))
+            prepare_cmd(0x80, 0x000a1400, offset, RKFT_OFF_INCR))
         block = self.__dev_handle.bulkRead(self.__read_endpoint, RKFT_BLOCKSIZE)
         self.__dev_handle.bulkRead(self.__read_endpoint, 13)
         if size < RKFT_BLOCKSIZE and len(block) < size:
@@ -346,29 +350,33 @@ class RkOperation(object):
     self.__logger.print_dividor()
     self.__logger.log('\tBackup partition 0x%08X@0x%08X to file %s\n\n' % (
         size, offset, file_name))
-    with open(file_name, 'w') as fh:
+    with open(file_name, 'wb') as fh:
       self.__dump_partition(offset, size, fh)
     self.__logger.print_done()
 
     # Verify backup.
+    #TODO add verification start msg
     self.__logger.log('\n')
-    with open(file_name) as fh:
+    with open(file_name, 'rb') as fh:
       self.__cmp_part_with_file(offset, size, fh)
+      #TODO add verified OK msg
 
 
+  #FIXME need test
   def erase_partition(self, offset, size):
     self.__init_device()
 
     self.__logger.print_dividor()
     self.__logger.log('\tErasing partition 0x%08X@0x%08X\n\n' % (size, offset))
-    buf = ''.join([chr(0xFF)] * RKFT_BLOCKSIZE)
+
+    buf = b'\xFF' * RKFT_BLOCKSIZE
     while size > 0:
       if offset % RKFT_DISPLAY == 0:
         self.__logger.log(
             '\terasing flash memory at offset 0x%08X\n' % offset)
 
       self.__dev_handle.bulkWrite(self.__write_endpoint,
-          ''.join(prepare_cmd(0x80, 0x000a1500, offset, RKFT_OFF_INCR)))
+          prepare_cmd(0x80, 0x000a1500, offset, RKFT_OFF_INCR))
       self.__dev_handle.bulkWrite(self.__write_endpoint, buf)
       self.__dev_handle.bulkRead(self.__read_endpoint, 13)
 
@@ -381,7 +389,7 @@ class RkOperation(object):
   def reboot(self):
     self.__init_device()
     self.__dev_handle.bulkWrite(self.__write_endpoint,
-        ''.join(prepare_cmd(0x00, 0x0006ff00, 0x00000000, 0x00)))
+        prepare_cmd(0x00, 0x0006ff00, 0x00000000, 0x00))
     self.__dev_handle.bulkRead(self.__read_endpoint, 13)
     self.__logger.print_dividor()
     self.__logger.log('\tRebooting device\n')

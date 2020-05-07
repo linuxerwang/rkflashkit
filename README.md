@@ -1,14 +1,14 @@
 rkflashkit
 ==========
 
-rkflashkit is an open sourced (GPL v2) toolkit for flashing Linux kernel images (Picuntu) to rk3066/rk3188/rk3288 based devices. It's programmed with python and gtk2. The kernel program is adapted from Galland's rkflashtool_rk3066 which is in turn based on cyteen's rk3066-rkflashtool.
+rkflashkit is an open sourced (GPL v2) toolkit for flashing Linux kernel images (Picuntu) to rk3066/rk3188/rk3288 based devices. It's programmed with python and gtk3. The kernel program is adapted from Galland's rkflashtool_rk3066 which is in turn based on cyteen's rk3066-rkflashtool.
 
 rkflashkit talks to the devices through vpelletier's python-libusb1 which is a python wrapper of libusb. For convenience the python-libusb1 programs are included in rkflashkit. Also included is binary created for Ubuntu.
 
 
 Features
 ========
-* Programmed with python, GTK2 and libusb1.
+* Programmed with python, GTK3 and libusb1.
 * Automatically detect device connection.
 * Reboot device.
 * Flash kernel image file to specified partition.
@@ -19,6 +19,10 @@ Features
 
 Change logs:
 ============
+
+Release 0.1.5-dev:
+* Add support Python3.
+* Add support GTK3.
 
 Release 0.1.4:
 * Add support for RK3128.
@@ -54,7 +58,7 @@ Installation
 
 Before installing the deb file please install its dependency:
 
-$ sudo apt-get install python-gtk2
+$ sudo apt-get install python3-gi python3-libusb1
 
 then
 

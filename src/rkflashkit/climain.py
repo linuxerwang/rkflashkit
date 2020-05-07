@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 # -*- coding: utf-8 -*
 
 from datetime import datetime
@@ -6,7 +6,7 @@ import time
 import os
 import sys
 import re
-import rktalk
+from . import rktalk
 
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 
@@ -60,12 +60,12 @@ def wait_for_one_device():
   while True:
     devices = get_devices()
     if not devices:
-      print "No devices found, retry..."
+      print("No devices found, retry...")
       time.sleep(1)
     else:
-      print "Found devices:"
+      print("Found devices:")
       for dev in devices:
-        print dev[0]
+        print(dev[0])
       if len(devices) > 1:
         fatal("More than one device found.")
       break
@@ -134,7 +134,7 @@ class CliMain(object):
         raise RuntimeError("Unknown command: %s", args[0])
 
   def usage(self):
-    print """Usage: <cmd> [args] [<cmd> [args]...]
+    print("""Usage: <cmd> [args] [<cmd> [args]...]
 
 part                              List partition
 flash @<PARTITION> <IMAGE FILE>   Flash partition with image file
@@ -145,7 +145,8 @@ reboot                            Reboot device
 
 For example, flash device with boot.img and kernel.img, then reboot:
 
-  sudo rkflashkit flash @boot boot.img @kernel.img kernel.img reboot"""
+  sudo rkflashkit flash @boot boot.img @kernel.img kernel.img reboot""")
+
   def get_operation(self):
     assert self.bus_id and self.dev_id
     return Operation(self.logger, self.bus_id, self.dev_id)
@@ -164,7 +165,7 @@ For example, flash device with boot.img and kernel.img, then reboot:
       partitions = self.PARTITION_PATTERN.findall(part_name)
       if len(partitions) != 1:
         raise ValueError('Invalid partition %s' %  part_name)
-      print partitions
+      print(partitions)
       return (int(partitions[0][1], 16),
               int(partitions[0][0], 16))
     else:
