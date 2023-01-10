@@ -286,7 +286,7 @@ class RkOperation(object):
 
         self.__dev_handle.bulkWrite(self.__write_endpoint,
             prepare_cmd(0x80, 0x000a1500, offset, RKFT_OFF_INCR))
-        self.__dev_handle.bulkWrite(self.__write_endpoint, str(buf))
+        self.__dev_handle.bulkWrite(self.__write_endpoint, buf)
         self.__dev_handle.bulkRead(self.__read_endpoint, 13)
 
         offset += RKFT_OFF_INCR
