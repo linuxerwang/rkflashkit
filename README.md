@@ -62,7 +62,7 @@ $ sudo apt-get install python3-gi python3-libusb1
 
 then
 
-$ sudo dpkg -i rkflashkit_0.1.4_all.deb
+$ sudo dpkg -i rkflashkit_0.1.5_all.deb
 
 You should be able to find an icon in unity dasher or gnome menu.
 
